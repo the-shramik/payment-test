@@ -561,7 +561,7 @@
       const { url, res, data } = await request("/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: userLoginData
+        body: JSON.stringify(userLoginData)
       });
       
       setDebug("loginDebug", { url, status: res.status, data });
