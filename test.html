@@ -1,0 +1,944 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Telusko LMS — Student Payment & Enrollment Tester</title>
+
+  <!-- Razorpay Checkout -->
+  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+
+  <style>
+    :root{
+      --bgA:#0f172a;
+      --bgB:#111827;
+      --card:#0b1220;
+      --panel:#0f1b33;
+      --text:#e5e7eb;
+      --muted:#9ca3af;
+      --border:rgba(255,255,255,.10);
+      --brand:#667eea;
+      --brand2:#764ba2;
+      --ok:#10b981;
+      --warn:#f59e0b;
+      --bad:#ef4444;
+      --soft:rgba(255,255,255,.04);
+      --shadow: 0 18px 70px rgba(0,0,0,.45);
+      --radius:16px;
+    }
+
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial;
+      color:var(--text);
+      background: radial-gradient(1200px 600px at 20% 10%, rgba(102,126,234,.35), transparent 60%),
+                  radial-gradient(900px 500px at 70% 15%, rgba(118,75,162,.35), transparent 55%),
+                  linear-gradient(160deg, var(--bgA), var(--bgB));
+      min-height:100vh;
+      padding:18px;
+    }
+
+    .wrap{max-width:1100px;margin:0 auto;}
+    .header{
+      padding:16px 18px;
+      background: linear-gradient(135deg, rgba(102,126,234,.25), rgba(118,75,162,.18));
+      border:1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+
+    .titleRow{
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-start;
+      gap:12px;
+      flex-wrap:wrap;
+    }
+
+    h1{
+      margin:0;
+      font-size:18px;
+      letter-spacing:.2px;
+      line-height:1.35;
+    }
+    .sub{
+      margin-top:6px;
+      color:var(--muted);
+      font-size:12px;
+      line-height:1.55;
+    }
+
+    .pill{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:8px 10px;
+      border-radius:999px;
+      border:1px solid var(--border);
+      background: rgba(0,0,0,.18);
+      color:var(--text);
+      font-size:12px;
+      max-width:520px;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap;
+    }
+
+    .grid{
+      display:grid;
+      gap:12px;
+      margin-top:14px;
+    }
+    @media(min-width: 980px){
+      .grid{grid-template-columns: 1.25fr .95fr;}
+    }
+
+    .card{
+      background: linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.02));
+      border:1px solid var(--border);
+      border-radius: var(--radius);
+      padding:14px;
+      box-shadow: 0 14px 40px rgba(0,0,0,.35);
+    }
+
+    .card h2{
+      margin:0 0 8px;
+      font-size:14px;
+      letter-spacing:.2px;
+    }
+    .muted{color:var(--muted); font-size:12px; line-height:1.55;}
+    .row{display:flex; gap:10px; flex-wrap:wrap; align-items:center;}
+    .row.space{justify-content:space-between;}
+    label{display:block; font-size:12px; color:var(--muted); margin:10px 0 6px;}
+    input, select{
+      width:100%;
+      padding:10px 12px;
+      border-radius:12px;
+      border:1px solid var(--border);
+      background: rgba(0,0,0,.25);
+      color:var(--text);
+      outline:none;
+      font-size:13px;
+    }
+    input:focus, select:focus{border-color: rgba(102,126,234,.65); box-shadow: 0 0 0 3px rgba(102,126,234,.18);}
+
+    .btn{
+      border:none;
+      cursor:pointer;
+      padding:10px 12px;
+      border-radius:12px;
+      font-weight:800;
+      font-size:13px;
+      color:var(--text);
+      background: rgba(255,255,255,.06);
+      border:1px solid var(--border);
+      transition: .15s transform, .15s opacity, .15s box-shadow;
+      user-select:none;
+    }
+    .btn:hover{box-shadow: 0 10px 26px rgba(0,0,0,.25);}
+    .btn:active{transform: translateY(1px);}
+    .btn[disabled]{opacity:.55; cursor:not-allowed; box-shadow:none;}
+    .btn.primary{
+      background: linear-gradient(135deg, var(--brand), var(--brand2));
+      border:none;
+    }
+    .btn.ok{background: rgba(16,185,129,.22); border:1px solid rgba(16,185,129,.35);}
+    .btn.bad{background: rgba(239,68,68,.20); border:1px solid rgba(239,68,68,.35);}
+    .btn.ghost{background: transparent;}
+
+    .status{
+      margin-top:10px;
+      padding:10px 12px;
+      border-radius:12px;
+      border:1px solid var(--border);
+      background: rgba(0,0,0,.18);
+      font-size:12px;
+      line-height:1.55;
+      display:none;
+      white-space:pre-wrap;
+    }
+    .status.ok{display:block; border-color:rgba(16,185,129,.35); background: rgba(16,185,129,.12);}
+    .status.warn{display:block; border-color:rgba(245,158,11,.35); background: rgba(245,158,11,.12);}
+    .status.bad{display:block; border-color:rgba(239,68,68,.35); background: rgba(239,68,68,.12);}
+
+    .sectionTitle{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      flex-wrap:wrap;
+      margin-bottom:8px;
+    }
+
+    .kbd{
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size:12px;
+      color:rgba(229,231,235,.92);
+      background: rgba(255,255,255,.06);
+      border:1px solid var(--border);
+      padding:2px 6px;
+      border-radius:8px;
+    }
+
+    table{
+      width:100%;
+      border-collapse:collapse;
+      font-size:12px;
+      margin-top:10px;
+      overflow:hidden;
+      border-radius:14px;
+    }
+    th, td{
+      padding:10px;
+      border-bottom:1px solid rgba(255,255,255,.08);
+      vertical-align:top;
+      text-align:left;
+    }
+    th{color:var(--muted); font-size:11px; text-transform:uppercase; letter-spacing:.35px; background: rgba(255,255,255,.03);}
+    tr:hover td{background: rgba(255,255,255,.02);}
+    .tag{
+      display:inline-block;
+      padding:3px 8px;
+      border-radius:999px;
+      border:1px solid var(--border);
+      font-weight:900;
+      font-size:11px;
+      background: rgba(255,255,255,.06);
+      color:var(--text);
+      white-space:nowrap;
+    }
+    .tag.free{border-color:rgba(59,130,246,.35); background: rgba(59,130,246,.14);}
+    .tag.paid{border-color:rgba(245,158,11,.35); background: rgba(245,158,11,.14);}
+    .tag.ok{border-color:rgba(16,185,129,.35); background: rgba(16,185,129,.14);}
+    .tag.bad{border-color:rgba(239,68,68,.35); background: rgba(239,68,68,.14);}
+
+    details{margin-top:10px;}
+    summary{cursor:pointer; color:var(--muted); font-size:12px;}
+    pre{
+      margin:8px 0 0;
+      padding:10px;
+      border-radius:12px;
+      background:#070b14;
+      border:1px solid rgba(255,255,255,.08);
+      color:#cbd5e1;
+      overflow:auto;
+      max-height:260px;
+      font-size:12px;
+      line-height:1.55;
+    }
+
+    .split{
+      display:grid;
+      gap:12px;
+      margin-top:12px;
+    }
+    @media(min-width: 980px){
+      .split{grid-template-columns: 1fr 1fr;}
+    }
+
+    .miniNote{
+      margin-top:8px;
+      padding:10px 12px;
+      border-radius:12px;
+      border:1px dashed rgba(255,255,255,.14);
+      background: rgba(0,0,0,.14);
+      color:var(--muted);
+      font-size:12px;
+      line-height:1.55;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+    <div class="header">
+      <div class="titleRow">
+        <div>
+          <h1>Telusko LMS — Student Payment & Enrollment Tester</h1>
+          <div class="sub">
+            Simple flow: Setup → Login → Load Courses → Select → Enroll (Free) / Pay (Paid) → Status.
+            <br/>
+            Payment activation is webhook-first. After checkout, this UI will poll:
+            <span class="kbd">GET /payments/status/{order_id}</span> until it becomes <span class="kbd">completed</span>.
+          </div>
+        </div>
+        <div class="row">
+          <div id="tokenPill" class="pill">Token: not set</div>
+          <button class="btn ghost" onclick="pasteToken()">Paste Token</button>
+          <button class="btn ghost" onclick="clearToken()">Clear</button>
+        </div>
+      </div>
+
+      <div class="grid">
+        <!-- Left -->
+        <div class="card">
+          <div class="sectionTitle">
+            <h2>Step 0 — Setup</h2>
+            <div class="row">
+              <button class="btn ghost" onclick="restoreToken()">Restore Saved Token</button>
+              <button class="btn ghost" onclick="pingHealth()">Ping API</button>
+            </div>
+          </div>
+
+          <label>API Base</label>
+          <input id="apiBase" value="https://342zr37mgc.ap-south-1.awsapprunner.com/api/v1" />
+          <div class="miniNote">
+            If you use ngrok for webhook, keep this as localhost (fine). Webhook URL goes in Razorpay dashboard, not here.
+          </div>
+
+          <div id="globalStatus" class="status"></div>
+
+          <details>
+            <summary>Show debug</summary>
+            <pre id="globalDebug">Ready.</pre>
+          </details>
+        </div>
+
+        <!-- Right -->
+        <div class="card">
+          <div class="sectionTitle">
+            <h2>Step 1 — Login</h2>
+            <button class="btn primary" onclick="login()">Login</button>
+          </div>
+
+          <div class="split">
+            <div>
+              <label>Email / Username</label>
+              <input id="username" placeholder="shramik@gmail.com" />
+            </div>
+            <div>
+              <label>Password</label>
+              <input id="password" type="password" placeholder="password" />
+            </div>
+          </div>
+
+          <div id="loginStatus" class="status"></div>
+
+          <details>
+            <summary>Show debug</summary>
+            <pre id="loginDebug">No data yet.</pre>
+          </details>
+        </div>
+      </div>
+
+      <!-- Courses -->
+      <div class="card" style="margin-top:12px;">
+        <div class="sectionTitle">
+          <h2>Step 2 — Courses</h2>
+          <div class="row">
+            <button class="btn primary" onclick="loadCourses()">Load Courses</button>
+            <select id="courseFilter" onchange="renderCourses()">
+              <option value="all">All</option>
+              <option value="free">Free</option>
+              <option value="paid">Paid</option>
+            </select>
+            <div class="pill" id="courseCountPill">Courses: 0</div>
+            <div class="pill" id="selectedPill">Selected: none</div>
+          </div>
+        </div>
+
+        <div style="overflow:auto;">
+          <table>
+            <thead>
+              <tr>
+                <th>Title</th>
+                <th>Type</th>
+                <th>Price</th>
+                <th>Slug</th>
+                <th>Select</th>
+              </tr>
+            </thead>
+            <tbody id="courseRows">
+              <tr><td colspan="5" class="muted">Click “Load Courses”.</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div id="courseStatus" class="status"></div>
+
+        <details>
+          <summary>Show debug</summary>
+          <pre id="coursesDebug">No data yet.</pre>
+        </details>
+      </div>
+
+      <!-- Action + Status -->
+      <div class="grid" style="margin-top:12px;">
+        <div class="card">
+          <div class="sectionTitle">
+            <h2>Step 3 — Enroll / Pay</h2>
+            <div class="row">
+              <button class="btn ok" onclick="enrollOrPaySelected()">Enroll / Pay</button>
+              <button class="btn ghost" onclick="checkEnrollment()">Check Enrollment</button>
+              <button class="btn bad" onclick="cancelEnrollment()">Cancel Enrollment</button>
+            </div>
+          </div>
+
+          <div class="miniNote">
+            Paid flow:
+            <span class="kbd">POST /payments/create-order</span> → Razorpay checkout →
+            webhook updates DB → UI polls <span class="kbd">GET /payments/status/{order_id}</span>.
+            <br/>
+            Fallback (rare): if polling never completes, UI calls <span class="kbd">POST /payments/verify-payment</span>.
+          </div>
+
+          <div id="flowStatus" class="status"></div>
+
+          <details>
+            <summary>Show debug</summary>
+            <pre id="flowDebug">No data yet.</pre>
+          </details>
+        </div>
+
+        <div class="card">
+          <div class="sectionTitle">
+            <h2>Step 4 — My Status</h2>
+            <div class="row">
+              <button class="btn primary" onclick="loadMyCourses()">My Courses</button>
+              <button class="btn primary" onclick="loadMyPayments()">My Payments</button>
+              <button class="btn ghost" onclick="checkProtected()">Protected Content (selected)</button>
+            </div>
+          </div>
+
+          <div id="statusBox" class="status"></div>
+
+          <details>
+            <summary>Show debug</summary>
+            <pre id="statusDebug">No data yet.</pre>
+          </details>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+<script>
+  // ---------------------------------------------------------
+  // State (simple)
+  // ---------------------------------------------------------
+  let API = "";
+  let token = null;
+
+  let courses = [];
+  let selectedCourse = null;
+
+  let orderData = null;         // response from /payments/create-order
+  let lastRzpSuccess = null;    // razorpay handler payload (order_id/payment_id/signature)
+
+  const LS_TOKEN = "telusko_lms_student_token_v2";
+
+  // ---------------------------------------------------------
+  // Helpers
+  // ---------------------------------------------------------
+  function syncApi(){
+    API = (document.getElementById("apiBase").value || "").trim().replace(/\/$/, "");
+    if(!API) API = "https://342zr37mgc.ap-south-1.awsapprunner.com/api/v1";
+  }
+
+  function setStatus(id, msg, type){
+    const el = document.getElementById(id);
+    el.className = "status";
+    el.style.display = "none";
+    el.textContent = "";
+    if(!msg) return;
+
+    el.textContent = msg;
+    el.style.display = "block";
+    if(type === "ok") el.classList.add("ok");
+    else if(type === "warn") el.classList.add("warn");
+    else if(type === "bad") el.classList.add("bad");
+  }
+
+  function setDebug(id, obj){
+    document.getElementById(id).textContent =
+      typeof obj === "string" ? obj : JSON.stringify(obj, null, 2);
+  }
+
+  function setToken(t){
+    token = t || null;
+    const pill = document.getElementById("tokenPill");
+    if(token){
+      localStorage.setItem(LS_TOKEN, token);
+      pill.textContent = "Token: saved";
+    }else{
+      localStorage.removeItem(LS_TOKEN);
+      pill.textContent = "Token: not set";
+    }
+  }
+
+  function restoreToken(){
+    const t = localStorage.getItem(LS_TOKEN);
+    setToken(t);
+    setStatus("globalStatus", t ? "Token restored. You can load courses." : "No saved token found.", t ? "ok" : "warn");
+  }
+
+  function clearToken(){
+    setToken(null);
+    setStatus("globalStatus", "Token cleared.", "ok");
+  }
+
+  function pasteToken(){
+    const t = prompt("Paste access token (without the word 'Bearer'):", token || "");
+    if(t === null) return;
+    setToken(t.trim());
+    setStatus("globalStatus", "Token saved.", "ok");
+  }
+
+  async function request(path, opts = {}){
+    syncApi();
+    const url = path.startsWith("http") ? path : (API + (path.startsWith("/") ? "" : "/") + path);
+
+    const headers = Object.assign({}, opts.headers || {});
+    if(token) headers["Authorization"] = "Bearer " + token;
+
+    const res = await fetch(url, {
+      method: opts.method || "GET",
+      headers,
+      body: opts.body
+    });
+
+    const ct = res.headers.get("content-type") || "";
+    let data = null;
+    if(ct.includes("application/json")){
+      data = await res.json().catch(() => null);
+    }else{
+      const text = await res.text().catch(() => "");
+      data = { raw: text };
+    }
+    return { url, res, data };
+  }
+
+  function parseError(data){
+    if(!data) return "Request failed.";
+    if(typeof data.detail === "string") return data.detail;
+    if(data.message) return data.message;
+    if(data.raw) return String(data.raw).slice(0, 600);
+    return "Request failed.";
+  }
+
+  function escapeHtml(s){
+    return String(s ?? "")
+      .replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;")
+      .replaceAll('"',"&quot;").replaceAll("'","&#039;");
+  }
+
+  // ---------------------------------------------------------
+  // Step 0
+  // ---------------------------------------------------------
+  async function pingHealth(){
+    setStatus("globalStatus", "Pinging API...", "warn");
+    setDebug("globalDebug", "Working...");
+    try{
+      // Most projects have / (root) returning health JSON; if yours is different, update this.
+      const base = (document.getElementById("apiBase").value || "").trim().replace(/\/api\/v1\/?$/, "");
+      const { url, res, data } = await request(base || "https://342zr37mgc.ap-south-1.awsapprunner.com", { method:"GET" });
+      setDebug("globalDebug", { url, status: res.status, data });
+      setStatus("globalStatus", res.ok ? "API reachable." : ("API error: " + res.status), res.ok ? "ok" : "bad");
+    }catch(e){
+      setDebug("globalDebug", e.message || "Failed");
+      setStatus("globalStatus", e.message || "Failed to reach API.", "bad");
+    }
+  }
+
+  // ---------------------------------------------------------
+  // Step 1: Login
+  // ---------------------------------------------------------
+  async function login(){
+    setStatus("loginStatus", "Logging in...", "warn");
+    setDebug("loginDebug", "Working...");
+
+    try{
+      const username = (document.getElementById("username").value || "").trim();
+      const password = (document.getElementById("password").value || "").trim();
+      if(!username || !password){
+        setStatus("loginStatus", "Enter email/username and password.", "warn");
+        setDebug("loginDebug", "Missing credentials");
+        return;
+      }
+
+      const form = new URLSearchParams();
+      form.append("username", username);
+      form.append("password", password);
+
+      const { url, res, data } = await request("/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: form
+      });
+
+      setDebug("loginDebug", { url, status: res.status, data });
+
+      if(res.ok && data?.access_token){
+        setToken(data.access_token);
+        setStatus("loginStatus", "Login successful. Token saved.", "ok");
+      }else{
+        setToken(null);
+        setStatus("loginStatus", parseError(data), "bad");
+      }
+    }catch(e){
+      setToken(null);
+      setStatus("loginStatus", e.message || "Login failed.", "bad");
+      setDebug("loginDebug", e.message || "Login failed");
+    }
+  }
+
+  // ---------------------------------------------------------
+  // Step 2: Courses
+  // ---------------------------------------------------------
+  async function loadCourses(){
+    setStatus("courseStatus", "Loading courses...", "warn");
+    setDebug("coursesDebug", "Working...");
+
+    try{
+      const { url, res, data } = await request("/courses?limit=50&offset=0", { method:"GET" });
+      setDebug("coursesDebug", { url, status: res.status, data });
+
+      if(!res.ok){
+        setStatus("courseStatus", parseError(data), "bad");
+        return;
+      }
+
+      courses = Array.isArray(data) ? data : (Array.isArray(data?.items) ? data.items : []);
+      document.getElementById("courseCountPill").textContent = "Courses: " + courses.length;
+
+      if(!courses.length){
+        document.getElementById("courseRows").innerHTML =
+          `<tr><td colspan="5" class="muted">No published courses returned by API.</td></tr>`;
+        setStatus("courseStatus", "No courses found.", "warn");
+        return;
+      }
+
+      renderCourses();
+      setStatus("courseStatus", "Courses loaded. Select one.", "ok");
+    }catch(e){
+      setStatus("courseStatus", e.message || "Failed to load courses.", "bad");
+      setDebug("coursesDebug", e.message || "Failed");
+    }
+  }
+
+  function renderCourses(){
+    const filter = (document.getElementById("courseFilter").value || "all").trim();
+    let list = courses;
+
+    if(filter === "free") list = courses.filter(c => !c.price || Number(c.price) === 0);
+    if(filter === "paid") list = courses.filter(c => c.price && Number(c.price) > 0);
+
+    const rowsEl = document.getElementById("courseRows");
+    if(!list.length){
+      rowsEl.innerHTML = `<tr><td colspan="5" class="muted">No courses in this filter.</td></tr>`;
+      return;
+    }
+
+    rowsEl.innerHTML = list.map(c => {
+      const isFree = !c.price || Number(c.price) === 0;
+      const typeTag = isFree ? `<span class="tag free">Free</span>` : `<span class="tag paid">Paid</span>`;
+      const priceText = isFree ? "-" : ("₹" + c.price);
+      return `
+        <tr>
+          <td>
+            <div style="font-weight:900">${escapeHtml(c.title || "Untitled")}</div>
+            <div class="muted">${escapeHtml(c.id)}</div>
+          </td>
+          <td>${typeTag}</td>
+          <td>${escapeHtml(priceText)}</td>
+          <td>${escapeHtml(c.slug || "")}</td>
+          <td><button class="btn ghost" onclick="selectCourse('${escapeHtml(c.id)}')">Select</button></td>
+        </tr>
+      `;
+    }).join("");
+  }
+
+  async function selectCourse(courseId){
+    setStatus("flowStatus", "Selecting course...", "warn");
+    setDebug("flowDebug", "Loading course details...");
+
+    try{
+      const { url, res, data } = await request("/courses/" + encodeURIComponent(courseId), { method:"GET" });
+      setDebug("flowDebug", { url, status: res.status, data });
+
+      if(!res.ok){
+        setStatus("flowStatus", parseError(data), "bad");
+        return;
+      }
+
+      selectedCourse = data;
+      orderData = null;
+      lastRzpSuccess = null;
+
+      document.getElementById("selectedPill").textContent =
+        "Selected: " + (selectedCourse?.title || "course");
+
+      setStatus("flowStatus", "Selected. Now click Enroll / Pay.", "ok");
+    }catch(e){
+      setStatus("flowStatus", e.message || "Failed to select course.", "bad");
+      setDebug("flowDebug", e.message || "Failed");
+    }
+  }
+
+  // ---------------------------------------------------------
+  // Step 3: Enroll / Pay
+  // ---------------------------------------------------------
+  async function enrollOrPaySelected(){
+    if(!selectedCourse?.id){
+      setStatus("flowStatus", "Select a course first.", "warn");
+      return;
+    }
+
+    const isFree = !selectedCourse.price || Number(selectedCourse.price) === 0;
+    if(isFree) return enrollFree(selectedCourse.id);
+    return createOrder(selectedCourse.id);
+  }
+
+  async function enrollFree(courseId){
+    setStatus("flowStatus", "Enrolling in free course...", "warn");
+    setDebug("flowDebug", "Working...");
+    try{
+      const { url, res, data } = await request("/enrollments/enroll", {
+        method:"POST",
+        headers:{ "Content-Type":"application/json" },
+        body: JSON.stringify({ course_id: courseId })
+      });
+
+      setDebug("flowDebug", { url, status: res.status, data });
+
+      if(res.ok){
+        setStatus("flowStatus", "Enrollment successful (Free).", "ok");
+        await loadMyCourses();
+      }else{
+        setStatus("flowStatus", parseError(data), "bad");
+      }
+    }catch(e){
+      setStatus("flowStatus", e.message || "Enroll failed.", "bad");
+      setDebug("flowDebug", e.message || "Enroll failed");
+    }
+  }
+
+  async function createOrder(courseId){
+    setStatus("flowStatus", "Creating order for Razorpay...", "warn");
+    setDebug("flowDebug", "Working...");
+
+    try{
+      const { url, res, data } = await request("/payments/create-order", {
+        method:"POST",
+        headers:{ "Content-Type":"application/json" },
+        body: JSON.stringify({ course_id: courseId })
+      });
+
+      setDebug("flowDebug", { url, status: res.status, data });
+
+      if(!res.ok){
+        setStatus("flowStatus", parseError(data), "bad");
+        return;
+      }
+
+      orderData = data;
+      lastRzpSuccess = null;
+
+      setStatus("flowStatus", "Order created. Opening Razorpay...", "ok");
+      openRazorpay();
+    }catch(e){
+      setStatus("flowStatus", e.message || "Create order failed.", "bad");
+      setDebug("flowDebug", e.message || "Create order failed");
+    }
+  }
+
+  function openRazorpay(){
+    if(!orderData?.razorpay_order_id || !orderData?.razorpay_key_id){
+      setStatus("flowStatus", "Order data missing. Create order again.", "bad");
+      return;
+    }
+
+    const email = (document.getElementById("username").value || "").trim() || "student@test.com";
+    const options = {
+      key: orderData.razorpay_key_id,
+      amount: orderData.amount,
+      currency: orderData.currency || "INR",
+      order_id: orderData.razorpay_order_id,
+      name: "Telusko LMS",
+      description: orderData.course_title || "Course Payment",
+
+      handler: async (response) => {
+    // Payment success — verify immediately, no polling needed
+    lastRzpSuccess = response;
+    setStatus("flowStatus", "Payment done! Verifying...", "warn");
+    setDebug("flowDebug", { razorpay_success: response });
+
+    await verifyPaymentFallback(response);
+},
+
+      prefill: { name: "Student", email, contact: "9999999999" },
+      theme: { color: "#667eea" },
+      modal: {
+        ondismiss: () => {
+          setStatus("flowStatus", "Checkout closed. If you paid, wait 5–10 seconds then click My Courses / My Payments.", "warn");
+        }
+      }
+    };
+
+    const rzp = new Razorpay(options);
+    rzp.open();
+  }
+
+  async function pollPaymentStatus(orderId, cfg){
+    const maxSeconds = cfg?.maxSeconds ?? 60;
+    const intervalMs = cfg?.intervalMs ?? 2500;
+    const fallbackVerify = cfg?.fallbackVerify ?? false;
+
+    const attempts = Math.ceil((maxSeconds * 1000) / intervalMs);
+
+    for(let i=1; i<=attempts; i++){
+      setStatus("flowStatus", `Checking payment status... (${i}/${attempts})`, "warn");
+
+      const { url, res, data } = await request("/payments/status/" + encodeURIComponent(orderId), { method:"GET" });
+      setDebug("flowDebug", { poll: { url, status: res.status, data } });
+
+      if(!res.ok){
+        setStatus("flowStatus", "Status check failed: " + parseError(data), "bad");
+        return;
+      }
+
+      const st = (data?.status || "").toLowerCase();
+
+      if(st === "completed"){
+        setStatus("flowStatus", "Completed. You are enrolled now.", "ok");
+        await loadMyCourses();
+        await loadMyPayments();
+        return;
+      }
+
+      if(st === "failed" || st === "expired" || st === "refunded"){
+        setStatus("flowStatus", `Payment status: ${st}. You can retry payment.`, st === "failed" ? "bad" : "warn");
+        await loadMyPayments();
+        return;
+      }
+
+      // pending / processing
+      await new Promise(r => setTimeout(r, intervalMs));
+    }
+
+    // If still not completed -> fallback verify-payment (only possible if we have signature details)
+    if(fallbackVerify && lastRzpSuccess?.razorpay_signature){
+      setStatus("flowStatus", "Webhook delayed. Running fallback verify-payment...", "warn");
+      await verifyPaymentFallback(lastRzpSuccess);
+      return;
+    }
+
+    setStatus("flowStatus", "Still processing. Wait a bit and click My Courses / My Payments.", "warn");
+  }
+
+  async function verifyPaymentFallback(rzpRes){
+    setDebug("flowDebug", "Calling verify-payment fallback...");
+    try{
+      const payload = {
+        razorpay_order_id: rzpRes.razorpay_order_id,
+        razorpay_payment_id: rzpRes.razorpay_payment_id,
+        razorpay_signature: rzpRes.razorpay_signature
+      };
+
+      const { url, res, data } = await request("/payments/verify-payment", {
+        method:"POST",
+        headers:{ "Content-Type":"application/json" },
+        body: JSON.stringify(payload)
+      });
+
+      setDebug("flowDebug", { url, status: res.status, request: payload, data });
+
+      if(res.ok && data?.success){
+        setStatus("flowStatus", "Verified via fallback. Enrollment should be active now.", "ok");
+        await loadMyCourses();
+        await loadMyPayments();
+      }else{
+        setStatus("flowStatus", parseError(data) || "verify-payment failed.", "bad");
+      }
+    }catch(e){
+      setStatus("flowStatus", e.message || "verify-payment failed.", "bad");
+      setDebug("flowDebug", e.message || "verify-payment failed");
+    }
+  }
+
+  async function checkEnrollment(){
+    if(!selectedCourse?.id){
+      setStatus("flowStatus", "Select a course first.", "warn");
+      return;
+    }
+    setStatus("flowStatus", "Checking enrollment...", "warn");
+    const { url, res, data } = await request("/enrollments/check/" + encodeURIComponent(selectedCourse.id), { method:"GET" });
+    setDebug("flowDebug", { url, status: res.status, data });
+    setStatus("flowStatus", res.ok ? "Enrollment check done. Open debug." : parseError(data), res.ok ? "ok" : "bad");
+  }
+
+  async function cancelEnrollment(){
+    if(!selectedCourse?.id){
+      setStatus("flowStatus", "Select a course first.", "warn");
+      return;
+    }
+    setStatus("flowStatus", "Cancelling enrollment...", "warn");
+    const { url, res, data } = await request("/enrollments/cancel/" + encodeURIComponent(selectedCourse.id), { method:"DELETE" });
+    setDebug("flowDebug", { url, status: res.status, data });
+    setStatus("flowStatus", res.ok ? "Enrollment cancelled. Open debug." : parseError(data), res.ok ? "ok" : "bad");
+    if(res.ok) await loadMyCourses();
+  }
+
+  // ---------------------------------------------------------
+  // Step 4: My status
+  // ---------------------------------------------------------
+  async function loadMyCourses(){
+    setStatus("statusBox", "Loading my courses...", "warn");
+    const { url, res, data } = await request("/enrollments/my-courses", { method:"GET" });
+    setDebug("statusDebug", { url, status: res.status, data });
+
+    if(res.ok){
+      const count = Array.isArray(data) ? data.length : 0;
+      setStatus("statusBox", `My Courses loaded: ${count}. Open debug JSON to see details.`, "ok");
+    }else{
+      setStatus("statusBox", parseError(data), "bad");
+    }
+  }
+
+  async function loadMyPayments(){
+    setStatus("statusBox", "Loading my payments...", "warn");
+    const { url, res, data } = await request("/payments/my-payments?limit=20&offset=0", { method:"GET" });
+    setDebug("statusDebug", { url, status: res.status, data });
+
+    if(res.ok){
+      const total = Number(data?.total_spent || 0).toFixed(2);
+      const c = Number(data?.total_courses_purchased || 0);
+      setStatus("statusBox", `My Payments loaded. Total spent: ₹${total}, Courses purchased: ${c}. Open debug JSON.`, "ok");
+    }else{
+      setStatus("statusBox", parseError(data), "bad");
+    }
+  }
+
+  async function checkProtected(){
+    if(!selectedCourse?.slug){
+      setStatus("statusBox", "Selected course has no slug. Select another course.", "warn");
+      return;
+    }
+    setStatus("statusBox", "Calling protected content endpoint...", "warn");
+    const { url, res, data } = await request("/courses/content/" + encodeURIComponent(selectedCourse.slug), { method:"GET" });
+    setDebug("statusDebug", { url, status: res.status, data });
+
+    if(res.status === 200) setStatus("statusBox", "Access granted (200).", "ok");
+    else if(res.status === 402) setStatus("statusBox", "Payment pending (402).", "warn");
+    else if(res.status === 403) setStatus("statusBox", "Not enrolled / cancelled / expired (403).", "bad");
+    else setStatus("statusBox", `Got status ${res.status}. Open debug JSON.`, "warn");
+  }
+
+  // ---------------------------------------------------------
+  // Init
+  // ---------------------------------------------------------
+  (function init(){
+    const saved = localStorage.getItem(LS_TOKEN);
+    if(saved) setToken(saved);
+    else setToken(null);
+
+    setDebug("globalDebug", "Ready. Set API base if needed.");
+    setDebug("loginDebug", "Login to get token.");
+    setDebug("coursesDebug", "Load courses.");
+    setDebug("flowDebug", "Select a course, then Enroll/Pay.");
+    setDebug("statusDebug", "Use My Courses / My Payments.");
+  })();
+</script>
+</body>
+</html>
