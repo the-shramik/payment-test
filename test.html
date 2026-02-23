@@ -640,18 +640,18 @@
           <td>${typeTag}</td>
           <td>${escapeHtml(priceText)}</td>
           <td>${escapeHtml(c.slug || "")}</td>
-          <td><button class="btn ghost" onclick="selectCourse('${escapeHtml(c.id)}')">Select</button></td>
+          <td><button class="btn ghost" onclick="selectCourse('${escapeHtml(c.slug)}')">Select</button></td>
         </tr>
       `;
     }).join("");
   }
 
-  async function selectCourse(courseId){
+  async function selectCourse(slug){
     setStatus("flowStatus", "Selecting course...", "warn");
     setDebug("flowDebug", "Loading course details...");
 
     try{
-      const { url, res, data } = await request("/courses/" + encodeURIComponent(courseId), { method:"GET" });
+      const { url, res, data } = await request("/courses/" + (slug), { method:"GET" });
       setDebug("flowDebug", { url, status: res.status, data });
 
       if(!res.ok){
