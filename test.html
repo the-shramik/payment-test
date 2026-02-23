@@ -614,23 +614,28 @@
     }
   }
 
-  function renderCourses(){
+  function renderCourses() {
     const filter = (document.getElementById("courseFilter").value || "all").trim();
-    let list = courses;
 
-    if(filter === "free") list = courses.filter(c => !c.price || Number(c.price) === 0);
-    if(filter === "paid") list = courses.filter(c => c.price && Number(c.price) > 0);
+    let list = courses;
+    if (filter === "free") list = courses.filter(c => !c.price || Number(c.price) === 0);
+    if (filter === "paid") list = courses.filter(c => c.price && Number(c.price) > 0);
 
     const rowsEl = document.getElementById("courseRows");
-    if(!list.length){
+
+    if (!list.length) {
       rowsEl.innerHTML = `<tr><td colspan="5" class="muted">No courses in this filter.</td></tr>`;
       return;
     }
 
     rowsEl.innerHTML = list.map(c => {
       const isFree = !c.price || Number(c.price) === 0;
-      const typeTag = isFree ? `<span class="tag free">Free</span>` : `<span class="tag paid">Paid</span>`;
+      const typeTag = isFree
+        ? `<span class="tag free">Free</span>`
+        : `<span class="tag paid">Paid</span>`;
+
       const priceText = isFree ? "-" : ("₹" + c.price);
+
       return `
         <tr>
           <td>
@@ -640,26 +645,27 @@
           <td>${typeTag}</td>
           <td>${escapeHtml(priceText)}</td>
           <td>${escapeHtml(c.slug || "")}</td>
-          <td><button class="btn ghost" onclick="selectCourse('${escapeHtml(c.slug)}')">Select</button></td>
+          <td><button class="btn ghost" data-id="${c.id}">Select</button></td>
         </tr>
       `;
     }).join("");
+
+    document.querySelectorAll(".btn.ghost").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const id = btn.dataset.id;
+        const course = courses.find(c => c.id === id);
+        selectCourse(course);
+      });
+    });
   }
 
-  async function selectCourse(slug){
+  async function selectCourse(course){
     setStatus("flowStatus", "Selecting course...", "warn");
     setDebug("flowDebug", "Loading course details...");
-
-    try{
-      const { url, res, data } = await request("/courses/" + (slug), { method:"GET" });
-      setDebug("flowDebug", { url, status: res.status, data });
-
-      if(!res.ok){
-        setStatus("flowStatus", parseError(data), "bad");
-        return;
-      }
-
-      selectedCourse = data;
+  
+    try{  
+      
+      selectedCourse = course;
       orderData = null;
       lastRzpSuccess = null;
 
